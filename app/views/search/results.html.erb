@@ -1,3 +1,51 @@
-<h1>Search Results</h1>
-<p><%= @query %></p>
-<%= link_to "Back to Search", "/search/index" %>
+<h1>Repository Search Results</h1>
+
+<p><%= @message %></p>
+
+<% if @tree_data.present? %>
+  <!--jsTree styles and script-->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.2.1/themes/default/style.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.12.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.2.1/jstree.min.js"></script>
+
+  <!--tree container-->
+  <div id="repo-tree"></div>
+
+  <!--file contents-->
+  <h3>File Contents: <span id="file-name"></span></h3>
+  <pre id="file-content"
+     style="
+       border:1px solid #ccc;
+       padding:10px;
+       max-height:600px;
+       overflow-y:auto;
+       white-space:pre-wrap;
+       word-wrap:break-word;">
+    </pre>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      $('#repo-tree').jstree({
+        core: {
+          data: <%= raw @tree_data.to_json %>
+        }
+      });
+
+      $('#repo-tree').on("select_node.jstree", function (e, data) {
+        const node = data.node;
+
+        if (node.icon === "jstree-file") {
+          fetch(`/file?repo=<%= @repo_name %>&path=${encodeURIComponent(node.data.path)}`)
+            .then(response => response.text())
+            .then(text => {
+              document.getElementById("file-content").textContent = text;
+              document.getElementById("file-name").textContent = node.text;
+            });
+        }
+      });
+    });
+  </script>
+<% end %>
+
+<br>
+<%= link_to "Back to Search", root_path %>
